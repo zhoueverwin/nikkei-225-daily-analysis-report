@@ -62,6 +62,7 @@ class ContradictionDetector:
         if "bullish" in direction and change_pct < -2.0:
             return {
                 "type": "stance_reversal",
+                "type_ja": "スタンス逆転",
                 "severity": "high",
                 "detail_ja": f"前日の強気スタンスに反して日経は{change_pct:.2f}%下落。スタンスの見直しが必要",
             }
@@ -69,6 +70,7 @@ class ContradictionDetector:
         elif "bearish" in direction and change_pct > 2.0:
             return {
                 "type": "stance_reversal",
+                "type_ja": "スタンス逆転",
                 "severity": "high",
                 "detail_ja": f"前日の弱気スタンスに反して日経は+{change_pct:.2f}%上昇。スタンスの見直しが必要",
             }
@@ -88,6 +90,7 @@ class ContradictionDetector:
                 if fx_change > 1.5:
                     flags.append({
                         "type": "assumption_challenged",
+                        "type_ja": "前提条件の変化",
                         "severity": "medium",
                         "detail_ja": f"前提条件「{assumption}」に関連: ドル円が{fx_change:.2f}%の大幅変動。政策前提の確認が必要",
                     })
@@ -117,6 +120,7 @@ class ContradictionDetector:
             if consecutive_misses >= 2:
                 return {
                     "type": "consecutive_miss",
+                    "type_ja": "連続予測ミス",
                     "severity": "high",
                     "detail_ja": f"強気スタンスにもかかわらず{consecutive_misses + 1}日連続下落。トレンド転換の可能性を検討すべき",
                 }

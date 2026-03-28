@@ -145,8 +145,13 @@ class SentimentAnalyzer:
             "negative": "ネガティブ",
         }.get(label, "中立")
 
-        top_neg_titles = [a["title"][:60] for a in analysis.get("top_negative", []) if a["sentiment_score"] < -0.1]
-        top_pos_titles = [a["title"][:60] for a in analysis.get("top_positive", []) if a["sentiment_score"] > 0.1]
+        def _ja_title(title: str) -> str | None:
+            """Return a Japanese-only title, or None if it's primarily English."""
+            jp_chars = sum(1 for c in title if '\u3040' <= c <= '\u30ff' or '\u4e00' <= c <= '\u9fff')
+            return title[:40] if jp_chars >= 3 else None
+
+        top_neg_titles = [t for a in analysis.get("top_negative", []) if a["sentiment_score"] < -0.1 for t in [_ja_title(a["title"])] if t]
+        top_pos_titles = [t for a in analysis.get("top_positive", []) if a["sentiment_score"] > 0.1 for t in [_ja_title(a["title"])] if t]
 
         summary = f"ニュース感情分析: {label_ja} (スコア: {score:+.3f}, {count}記事分析)"
 

@@ -440,7 +440,7 @@
     <div class="section-title"><span class="section-icon">⚠️</span>矛盾・注意点</div>
     {% for flag in contradiction_flags %}
     <div class="contradiction">
-      <h3>{{ flag.type }}</h3>
+      <h3>{{ flag.type_ja | default(flag.type) }}</h3>
       <p>{{ flag.detail_ja }}</p>
     </div>
     {% endfor %}
@@ -469,8 +469,9 @@
       </div>
       <div>
         {% set conf_class = {"high": "conf-high", "medium": "conf-medium", "low": "conf-low"} %}
+        {% set conf_ja = {"high": "高", "medium": "中", "low": "低"} %}
         <span class="confidence-badge {{ conf_class.get(analysis.prediction.confidence, 'conf-low') }}">
-          置信度: {{ analysis.prediction.confidence|default('N/A') }}
+          確信度: {{ conf_ja.get(analysis.prediction.confidence, analysis.prediction.confidence)|default('N/A') }}
         </span>
       </div>
       <p style="margin-top: 14px; color: var(--text2); font-size: 0.9em;">{{ analysis.prediction.reasoning_ja|default('') }}</p>
@@ -505,7 +506,8 @@
       <div class="calendar-event">
         <span class="calendar-date">{{ event.date[5:] }}</span>
         <span class="calendar-name">{{ event.name_ja }}</span>
-        <span class="calendar-importance imp-{{ event.importance }}">{{ event.importance }}</span>
+        {% set imp_ja = {"critical": "重要", "high": "高", "medium": "中", "low": "低"} %}
+        <span class="calendar-importance imp-{{ event.importance }}">{{ imp_ja.get(event.importance, event.importance) }}</span>
       </div>
       {% endfor %}
     </div>
