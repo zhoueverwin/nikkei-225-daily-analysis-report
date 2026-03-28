@@ -50,3 +50,29 @@ def prepare_line_data(series: pd.Series, days: int = 30) -> list[dict[str, Any]]
         {"time": str(idx.date()) if hasattr(idx, "date") else str(idx), "value": round(float(v), 2)}
         for idx, v in recent.items()
     ]
+
+
+def prepare_sector_chart_data(sector_data: dict) -> list[dict[str, Any]]:
+    """Prepare sector performance data for horizontal bar chart."""
+    if not sector_data or not sector_data.get("sectors"):
+        return []
+
+    sectors = sector_data["sectors"]
+    data = []
+    for key, info in sorted(sectors.items(), key=lambda x: x[1].get("change_pct", 0), reverse=True):
+        data.append({
+            "name": info.get("name_ja", key),
+            "change_pct": info.get("change_pct", 0),
+            "five_day_change_pct": info.get("five_day_change_pct", 0),
+            "color": "rgba(77,255,145,0.8)" if info.get("change_pct", 0) >= 0 else "rgba(255,77,106,0.8)",
+        })
+    return data
+
+
+def prepare_sentiment_gauge_data(sentiment: dict) -> dict[str, Any]:
+    """Prepare sentiment data for gauge/meter visualization."""
+    return {
+        "score": sentiment.get("overall_score", 0),
+        "label": sentiment.get("overall_label", "neutral"),
+        "article_count": sentiment.get("article_count", 0),
+    }

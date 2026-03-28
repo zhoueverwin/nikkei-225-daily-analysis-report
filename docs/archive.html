@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>日経225分析レポート — アーカイブ</title>
+<style>
+  :root {
+    --bg: #0f1117; --surface: #1a1d28; --surface2: #242836;
+    --border: #2e3347; --accent: #6c8cff; --accent2: #ff6c8c;
+    --accent3: #6cffa8; --text: #e0e4f0; --text2: #8b92a8;
+    --red: #ff4d6a; --green: #4dff91;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', -apple-system, 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+    background: var(--bg); color: var(--text); line-height: 1.7;
+  }
+  .header {
+    background: linear-gradient(135deg, #1a1d28 0%, #0f1117 50%, #1a1028 100%);
+    border-bottom: 1px solid var(--border); padding: 40px 30px; text-align: center;
+  }
+  .header h1 {
+    font-size: 1.8em;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .header .subtitle { color: var(--text2); margin-top: 8px; }
+  .container { max-width: 800px; margin: 0 auto; padding: 30px 20px; }
+  .latest-link {
+    display: block; text-align: center; padding: 16px;
+    background: var(--surface); border: 1px solid var(--accent);
+    border-radius: 10px; margin-bottom: 30px;
+    color: var(--accent); text-decoration: none; font-weight: 600;
+  }
+  .latest-link:hover { background: var(--surface2); }
+  .report-card {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 16px 20px; margin-bottom: 8px;
+    text-decoration: none; color: var(--text); transition: border-color 0.2s;
+  }
+  .report-card:hover { border-color: var(--accent); }
+  .report-date { font-weight: 600; color: var(--accent); min-width: 110px; }
+  .report-day { color: var(--text2); font-size: 0.85em; min-width: 40px; }
+  .report-spacer { flex: 1; }
+  .report-link { color: var(--accent); font-size: 0.85em; }
+  .month-header {
+    color: var(--text2); font-size: 0.9em; font-weight: 600;
+    margin: 20px 0 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border);
+  }
+  .footer {
+    text-align: center; padding: 30px; color: var(--text2);
+    font-size: 0.8em; border-top: 1px solid var(--border); margin-top: 30px;
+  }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>日経225 分析レポート アーカイブ</h1>
+  <div class="subtitle">1件のレポート</div>
+</div>
+<div class="container">
+  <a class="latest-link" href="index.html">最新のレポートを見る →</a>
+  <div class="month-header">2026年03月</div>
+<a class="report-card" href="report-2026-03-28.html"><span class="report-date">2026-03-28</span><span class="report-day">(土)</span><span class="report-spacer"></span><span class="report-link">レポートを見る →</span></a>
+</div>
+<div class="footer">日経225毎日分析レポート — AI自動生成</div>
+</body>
+</html>

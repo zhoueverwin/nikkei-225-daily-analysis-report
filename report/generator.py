@@ -36,6 +36,13 @@ class ReportGenerator:
         prediction_verification: dict[str, Any] | None,
         data_quality: dict[str, Any],
         contradiction_flags: list[dict],
+        # Phase 2+3 additions
+        news_data: dict[str, Any] | None = None,
+        sentiment_data: dict[str, Any] | None = None,
+        sector_data: dict[str, Any] | None = None,
+        calendar_data: dict[str, Any] | None = None,
+        candlestick_data: list[dict] | None = None,
+        volume_data: list[dict] | None = None,
     ) -> Path:
         """Generate the HTML report and return the output path."""
 
@@ -56,12 +63,13 @@ class ReportGenerator:
             "prediction_verification": prediction_verification,
             "data_quality": data_quality,
             "contradiction_flags": contradiction_flags,
-            "json_data": json.dumps({
-                "nikkei": nikkei,
-                "market_data": market_data.get("market_data", {}),
-                "fx": market_data.get("fx", {}),
-                "commodities": market_data.get("commodities", {}),
-            }, ensure_ascii=False),
+            # Phase 2+3
+            "news_data": news_data,
+            "sentiment_data": sentiment_data,
+            "sector_data": sector_data,
+            "calendar_data": calendar_data,
+            "candlestick_data": candlestick_data,
+            "volume_data": volume_data,
         }
 
         template = self.env.get_template("report.html.j2")

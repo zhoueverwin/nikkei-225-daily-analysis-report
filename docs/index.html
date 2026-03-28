@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>日経225分析レポート — 2026-03-28</title>
+<script src="https://unpkg.com/lightweight-charts@4.1.0/dist/lightweight-charts.standalone.production.js"></script>
 <style>
   :root {
     --bg: #0f1117;
@@ -42,7 +43,6 @@
   .header .date { color: var(--text2); margin-top: 8px; font-size: 0.95em; }
   .container { max-width: 960px; margin: 0 auto; padding: 30px 20px; }
 
-  /* Dashboard cards */
   .dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 30px; }
   .metric-card {
     background: var(--surface);
@@ -58,7 +58,6 @@
   .negative { color: var(--red); }
   .neutral-val { color: var(--text2); }
 
-  /* Sections */
   .section { margin-bottom: 30px; }
   .section-title {
     font-size: 1.2em;
@@ -67,7 +66,11 @@
     margin-bottom: 14px;
     padding-bottom: 8px;
     border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
+  .section-icon { font-size: 1.1em; }
   .card {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -80,13 +83,11 @@
   .card li { margin-bottom: 4px; }
   .card h3 { color: var(--orange); font-size: 1em; margin-bottom: 10px; }
 
-  /* Signals */
   .signal { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.8em; font-weight: 600; margin: 2px; }
   .signal-bullish { background: rgba(77,255,145,0.15); color: var(--green); }
   .signal-bearish { background: rgba(255,77,106,0.15); color: var(--red); }
   .signal-info { background: rgba(108,140,255,0.15); color: var(--accent); }
 
-  /* Prediction box */
   .prediction-box {
     background: var(--surface);
     border: 1px solid var(--accent);
@@ -106,12 +107,10 @@
   .conf-medium { background: rgba(255,159,67,0.2); color: var(--orange); }
   .conf-low { background: rgba(255,77,106,0.2); color: var(--red); }
 
-  /* Risk events */
   .risk-table { width: 100%; border-collapse: collapse; font-size: 0.9em; }
   .risk-table th { background: var(--surface2); color: var(--accent); padding: 8px 12px; text-align: left; font-weight: 600; }
   .risk-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); }
 
-  /* Contradiction warning */
   .contradiction {
     background: rgba(255,77,106,0.08);
     border: 1px solid rgba(255,77,106,0.3);
@@ -121,17 +120,9 @@
   }
   .contradiction h3 { color: var(--red); }
 
-  /* Accuracy stats */
-  .accuracy-bar {
-    background: var(--surface2);
-    border-radius: 6px;
-    height: 8px;
-    overflow: hidden;
-    margin: 8px 0;
-  }
+  .accuracy-bar { background: var(--surface2); border-radius: 6px; height: 8px; overflow: hidden; margin: 8px 0; }
   .accuracy-fill { height: 100%; border-radius: 6px; background: linear-gradient(90deg, var(--accent), var(--accent3)); }
 
-  /* Beginner */
   .beginner-box {
     background: linear-gradient(135deg, rgba(108,140,255,0.08), rgba(108,255,168,0.08));
     border: 1px solid rgba(108,140,255,0.2);
@@ -140,16 +131,72 @@
   }
   .beginner-box h3 { color: var(--accent); margin-bottom: 10px; }
 
-  /* Data quality */
   .quality-indicator { font-size: 0.8em; color: var(--text2); text-align: right; margin-top: 20px; }
 
-  /* Footer */
+  /* Chart container */
+  #chart-container {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+  #tv-chart { width: 100%; height: 350px; }
+
+  /* Sector bars */
+  .sector-bar-container { margin: 6px 0; }
+  .sector-bar-label { display: flex; justify-content: space-between; font-size: 0.85em; margin-bottom: 2px; }
+  .sector-bar-track { background: var(--surface2); border-radius: 4px; height: 22px; position: relative; overflow: hidden; }
+  .sector-bar-fill { height: 100%; border-radius: 4px; display: flex; align-items: center; padding: 0 8px; font-size: 0.75em; font-weight: 600; min-width: 2px; transition: width 0.5s; }
+
+  /* News list */
+  .news-item {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.9em;
+  }
+  .news-item:last-child { border-bottom: none; }
+  .news-item .news-title { color: var(--text); }
+  .news-item .news-meta { color: var(--text2); font-size: 0.8em; margin-top: 2px; }
+  .news-sentiment { display: inline-block; padding: 1px 8px; border-radius: 8px; font-size: 0.75em; font-weight: 600; }
+
+  /* Sentiment meter */
+  .sentiment-meter { display: flex; align-items: center; gap: 12px; padding: 12px 0; }
+  .meter-bar { flex: 1; height: 12px; background: var(--surface2); border-radius: 6px; position: relative; overflow: hidden; }
+  .meter-fill-neg { position: absolute; right: 50%; height: 100%; background: linear-gradient(270deg, var(--surface2), var(--red)); border-radius: 6px 0 0 6px; }
+  .meter-fill-pos { position: absolute; left: 50%; height: 100%; background: linear-gradient(90deg, var(--surface2), var(--green)); border-radius: 0 6px 6px 0; }
+  .meter-center { position: absolute; left: 50%; top: -2px; width: 2px; height: 16px; background: var(--text2); }
+  .meter-label { font-size: 0.85em; font-weight: 600; min-width: 60px; }
+
+  /* Calendar */
+  .calendar-event {
+    display: flex;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.9em;
+  }
+  .calendar-event:last-child { border-bottom: none; }
+  .calendar-date { min-width: 90px; color: var(--accent); font-weight: 600; }
+  .calendar-name { flex: 1; }
+  .calendar-importance {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 8px;
+    font-size: 0.75em;
+    font-weight: 600;
+  }
+  .imp-critical { background: rgba(255,77,106,0.2); color: var(--red); }
+  .imp-high { background: rgba(255,159,67,0.2); color: var(--orange); }
+  .imp-medium { background: rgba(108,140,255,0.2); color: var(--accent); }
+
   .footer { text-align: center; padding: 30px; color: var(--text2); font-size: 0.8em; border-top: 1px solid var(--border); margin-top: 30px; }
 
   @media (max-width: 640px) {
     .dashboard { grid-template-columns: repeat(2, 1fr); }
     .header h1 { font-size: 1.4em; }
     .container { padding: 20px 12px; }
+    #tv-chart { height: 250px; }
   }
 </style>
 </head>
@@ -157,15 +204,14 @@
 
 <div class="header">
   <h1>日経225 毎日分析レポート</h1>
-  <div class="date">2026-03-28 | 生成時刻: 2026-03-28 22:57 JST</div>
+  <div class="date">2026-03-28 | 生成時刻: 2026-03-28 23:17 JST</div>
 </div>
 
 <div class="container">
 
-  <!-- Headline -->
   
   <div class="card" style="border-left: 3px solid var(--accent); margin-bottom: 24px;">
-    <p style="font-size: 1.15em; font-weight: 600;">日経225小幅反落 (-0.43%) — 米国株急落とVIX急騰がリスクオフムードを強める</p>
+    <p style="font-size: 1.15em; font-weight: 600;">日経225小幅反落 (-0.43%) — イラン情勢緊迫で原油急騰、米国株全面安がリスクオフを加速</p>
   </div>
   
 
@@ -180,7 +226,6 @@
       </div>
     </div>
     
-
     
     <div class="metric-card">
       <div class="label">USD/JPY</div>
@@ -190,7 +235,6 @@
       </div>
     </div>
     
-
     
     <div class="metric-card">
       <div class="label">S&amp;P 500</div>
@@ -200,7 +244,6 @@
       </div>
     </div>
     
-
     
     <div class="metric-card">
       <div class="label">VIX</div>
@@ -210,7 +253,6 @@
       </div>
     </div>
     
-
     
     <div class="metric-card">
       <div class="label">WTI原油</div>
@@ -220,7 +262,6 @@
       </div>
     </div>
     
-
     
     <div class="metric-card">
       <div class="label">金</div>
@@ -235,9 +276,19 @@
   <!-- Summary -->
   
   <div class="section">
-    <div class="section-title">本日の総括</div>
+    <div class="section-title"><span class="section-icon">📋</span>本日の総括</div>
     <div class="card">
-      <p>日経225は53,373円で取引を終え、前日比-0.43%の小幅反落となった。S&P500が-1.67%、NASDAQが-2.15%と米国市場が全面安となり、VIXが31.05まで急騰（+13.2%）したことでリスクオフムードが強まった。原油価格がWTI 99.64ドル（+5.5%）と急騰し、金も4,492ドル（+2.7%）に上昇するなど、地政学的リスクやインフレ懸念が市場を覆っている。ドル円は159.70円とほぼ横ばいで、為替面からの追加的な圧力は限定的だった。テクニカル面では日経は25日移動平均線（55,125円）を大きく下回り、ボリンジャーバンド下半分に位置しており、短期的な弱さが続いている。</p>
+      <p>日経225は53,373円で取引を終え、前日比-0.43%の小幅反落。イラン・中東情勢の緊迫化を背景にWTI原油が99.64ドル（+5.5%）と急騰し、100ドル大台目前まで迫った。これを受けてS&P500は-1.67%、NASDAQは-2.15%と米国市場が全面安となり、VIXは31.05まで急騰（+13.2%）。金も4,492ドル（+2.7%）と安全資産に資金が流入するリスクオフの展開。ドル円は159.70円とほぼ横ばいで為替面からの追加圧力は限定的だったが、日経先物は51,385円（-1.5%）と現物から大きく乖離しており、週明けのギャップダウンリスクが高い。</p>
+    </div>
+  </div>
+  
+
+  <!-- Interactive Chart -->
+  
+  <div class="section">
+    <div class="section-title"><span class="section-icon">📈</span>日経225チャート（3ヶ月）</div>
+    <div id="chart-container">
+      <div id="tv-chart"></div>
     </div>
   </div>
   
@@ -245,8 +296,7 @@
   <!-- Technical Analysis -->
   
   <div class="section">
-    <div class="section-title">テクニカル分析</div>
-
+    <div class="section-title"><span class="section-icon">🔧</span>テクニカル分析</div>
     <div class="dashboard" style="margin-bottom: 12px;">
       
       <div class="metric-card">
@@ -257,7 +307,6 @@
         <div class="change neutral-val">neutral</div>
       </div>
       
-
       
       <div class="metric-card">
         <div class="label">MACD</div>
@@ -267,19 +316,13 @@
         <div class="change neutral-val">none</div>
       </div>
       
-
       
       <div class="metric-card">
         <div class="label">MA5 / MA25</div>
-        <div class="value" style="font-size: 1em;">
-          52898.82 / 55124.59
-        </div>
-        <div class="change neutral-val">
-          —
-        </div>
+        <div class="value" style="font-size: 1em;">52898.82 / 55124.59</div>
+        <div class="change neutral-val">—</div>
       </div>
       
-
       
       <div class="metric-card">
         <div class="label">ボリンジャー位置</div>
@@ -288,35 +331,296 @@
       </div>
       
     </div>
-
     
+    
+    <div class="card"><p>日経225は25日移動平均線（55,125円）を大きく下回り、5日線（52,899円）をわずかに上回る水準。RSI(14)は42.19と中立圏だが下方向への圧力あり。MACDは-660.91でシグナル線を下回り（ヒストグラム-127.4）、弱気基調が継続。ボリンジャーバンドでは下半分に位置し、バンド幅13.07%と拡大中。サポートは50,689円付近、レジスタンスは55,125円（25日線）。出来高は1.7億株と20日平均並みで、パニック売りの兆候はまだ見られない。</p></div>
+    
+  </div>
+  
+
+  <!-- Sector Rotation -->
+  
+  <div class="section">
+    <div class="section-title"><span class="section-icon">🏭</span>セクターローテーション</div>
+    <div class="card">
+      
+      <div class="sector-bar-container">
+        <div class="sector-bar-label">
+          <span>総合商社</span>
+          <span class="positive">+1.89%</span>
+        </div>
+        <div class="sector-bar-track">
+          
+          <div class="sector-bar-fill" style="width: 28.349999999999998%; background: rgba(77,255,145,0.6); "></div>
+        </div>
+      </div>
+      
+      <div class="sector-bar-container">
+        <div class="sector-bar-label">
+          <span>電力・ガス</span>
+          <span class="positive">+1.89%</span>
+        </div>
+        <div class="sector-bar-track">
+          
+          <div class="sector-bar-fill" style="width: 28.349999999999998%; background: rgba(77,255,145,0.6); "></div>
+        </div>
+      </div>
+      
+      <div class="sector-bar-container">
+        <div class="sector-bar-label">
+          <span>医薬品</span>
+          <span class="positive">+0.88%</span>
+        </div>
+        <div class="sector-bar-track">
+          
+          <div class="sector-bar-fill" style="width: 13.2%; background: rgba(77,255,145,0.6); "></div>
+        </div>
+      </div>
+      
+      <div class="sector-bar-container">
+        <div class="sector-bar-label">
+          <span>自動車</span>
+          <span class="positive">+0.59%</span>
+        </div>
+        <div class="sector-bar-track">
+          
+          <div class="sector-bar-fill" style="width: 8.85%; background: rgba(77,255,145,0.6); "></div>
+        </div>
+      </div>
+      
+      <div class="sector-bar-container">
+        <div class="sector-bar-label">
+          <span>銀行</span>
+          <span class="positive">+0.54%</span>
+        </div>
+        <div class="sector-bar-track">
+          
+          <div class="sector-bar-fill" style="width: 8.100000000000001%; background: rgba(77,255,145,0.6); "></div>
+        </div>
+      </div>
+      
+      <div class="sector-bar-container">
+        <div class="sector-bar-label">
+          <span>鉄鋼</span>
+          <span class="positive">+0.18%</span>
+        </div>
+        <div class="sector-bar-track">
+          
+          <div class="sector-bar-fill" style="width: 2.6999999999999997%; background: rgba(77,255,145,0.6); "></div>
+        </div>
+      </div>
+      
+      <div class="sector-bar-container">
+        <div class="sector-bar-label">
+          <span>通信</span>
+          <span class="positive">+0.13%</span>
+        </div>
+        <div class="sector-bar-track">
+          
+          <div class="sector-bar-fill" style="width: 2%; background: rgba(77,255,145,0.6); "></div>
+        </div>
+      </div>
+      
+      <div class="sector-bar-container">
+        <div class="sector-bar-label">
+          <span>電機・エレクトロニクス</span>
+          <span class="negative">-0.28%</span>
+        </div>
+        <div class="sector-bar-track">
+          
+          <div class="sector-bar-fill" style="width: 4.2%; background: rgba(255,77,106,0.6); margin-left: auto;"></div>
+        </div>
+      </div>
+      
+      <div class="sector-bar-container">
+        <div class="sector-bar-label">
+          <span>不動産</span>
+          <span class="negative">-1.85%</span>
+        </div>
+        <div class="sector-bar-track">
+          
+          <div class="sector-bar-fill" style="width: 27.75%; background: rgba(255,77,106,0.6); margin-left: auto;"></div>
+        </div>
+      </div>
+      
+      <div class="sector-bar-container">
+        <div class="sector-bar-label">
+          <span>半導体</span>
+          <span class="negative">-3.06%</span>
+        </div>
+        <div class="sector-bar-track">
+          
+          <div class="sector-bar-fill" style="width: 45.9%; background: rgba(255,77,106,0.6); margin-left: auto;"></div>
+        </div>
+      </div>
+      
+    </div>
+    
+    <div class="card"><p>ディフェンシブセクターが優位 — リスク回避の資金シフト。セクター間の格差が大きい（5.0%幅）— 選別物色の傾向。総合商社が日次・週次ともに首位 — 持続的なトレンド</p></div>
+    
+  </div>
+  
+
+  <!-- News & Sentiment -->
+  
+  <div class="section">
+    <div class="section-title"><span class="section-icon">📰</span>ニュース & 市場センチメント</div>
 
     
     <div class="card">
-      <p>日経225は25日移動平均線（55,125円）を大きく下回り、5日線（52,899円）をわずかに上回る水準。RSI(14)は42.19と中立圏だが、MACDは-660.91でシグナル線を下回り（ヒストグラム-127.4）、弱気基調が継続。ボリンジャーバンドでは下半分に位置し、バンド幅13.07%と比較的広い。サポートは50,689円付近、レジスタンスは55,125円（25日線）。出来高は1.7億株と20日平均並みで、パニック売りの兆候はまだ見られない。</p>
+      <h3>センチメントスコア</h3>
+      <div class="sentiment-meter">
+        <span class="meter-label negative">ネガティブ</span>
+        <div class="meter-bar">
+          <div class="meter-center"></div>
+          
+          <div class="meter-fill-neg" style="width: 3.55%;"></div>
+          
+        </div>
+        <span class="meter-label positive" style="text-align: right;">ポジティブ</span>
+      </div>
+      <p style="text-align: center; font-size: 0.85em; color: var(--text2);">
+        スコア: -0.071 (28記事分析)
+      </p>
+      
+      <p style="margin-top: 8px; font-size: 0.9em;">ニュース感情分析: ややネガティブ (スコア: -0.071, 28記事分析)
+主なネガティブ要因: NYダウ 790ドル余 値下がり イラン情勢の長期化懸念で; スーパー コメ平均価格 6週連続で値下がり 5キロ 3978円
+主なポジティブ要因: 4月 電気・ガス料金 政府補助終了で値上がり 今後は？【Q＆A】; 3月の月例経済報告「緩やかに回復も中東情勢の影響を注視」</p>
+      
     </div>
     
+
+    <div class="card">
+      <h3>主要ニュース</h3>
+      
+      <div class="news-item">
+        <div class="news-title">円安進行 介入実施に難しい判断</div>
+        <div class="news-meta">
+          yahoo_finance_jp
+          
+          
+          <span class="news-sentiment" style="background: rgba(108,140,255,0.15); color: var(--accent);">円</span>
+          
+          
+        </div>
+      </div>
+      
+      <div class="news-item">
+        <div class="news-title">「AirJapan」2年1カ月で運航休止</div>
+        <div class="news-meta">
+          yahoo_finance_jp
+          
+          
+          <span class="news-sentiment" style="background: rgba(108,140,255,0.15); color: var(--accent);">japan</span>
+          
+          
+        </div>
+      </div>
+      
+      <div class="news-item">
+        <div class="news-title">退去費52万円も 賃貸トラブル注意</div>
+        <div class="news-meta">
+          yahoo_finance_jp
+          
+          
+          <span class="news-sentiment" style="background: rgba(108,140,255,0.15); color: var(--accent);">円</span>
+          
+          
+        </div>
+      </div>
+      
+      <div class="news-item">
+        <div class="news-title">NYダウ 790ドル余 値下がり イラン情勢の長期化懸念で</div>
+        <div class="news-meta">
+          nhk_business
+          
+          
+          <span class="news-sentiment" style="background: rgba(108,140,255,0.15); color: var(--accent);">株</span>
+          
+          <span class="news-sentiment" style="background: rgba(108,140,255,0.15); color: var(--accent);">市場</span>
+          
+          
+        </div>
+      </div>
+      
+      <div class="news-item">
+        <div class="news-title">NY市場 1ドル＝160円台に イラン情勢背景にドル買いの動き</div>
+        <div class="news-meta">
+          nhk_business
+          
+          
+          <span class="news-sentiment" style="background: rgba(108,140,255,0.15); color: var(--accent);">円</span>
+          
+          <span class="news-sentiment" style="background: rgba(108,140,255,0.15); color: var(--accent);">市場</span>
+          
+          <span class="news-sentiment" style="background: rgba(108,140,255,0.15); color: var(--accent);">為替</span>
+          
+          
+        </div>
+      </div>
+      
+      <div class="news-item">
+        <div class="news-title">ビーエスフジとBSテレビ東京 BS4K放送終了へ</div>
+        <div class="news-meta">
+          nhk_business
+          
+          
+          <span class="news-sentiment" style="background: rgba(108,140,255,0.15); color: var(--accent);">東京</span>
+          
+          
+        </div>
+      </div>
+      
+      <div class="news-item">
+        <div class="news-title">フジ・メディアHD 不動産事業買収提案 5月にも検討状況を説明</div>
+        <div class="news-meta">
+          nhk_business
+          
+          
+          <span class="news-sentiment" style="background: rgba(108,140,255,0.15); color: var(--accent);">円</span>
+          
+          
+        </div>
+      </div>
+      
+      <div class="news-item">
+        <div class="news-title">円相場 一時1ドル＝160円に迫る水準まで円安進む</div>
+        <div class="news-meta">
+          nhk_business
+          
+          
+          <span class="news-sentiment" style="background: rgba(108,140,255,0.15); color: var(--accent);">東京</span>
+          
+          <span class="news-sentiment" style="background: rgba(108,140,255,0.15); color: var(--accent);">円</span>
+          
+          <span class="news-sentiment" style="background: rgba(108,140,255,0.15); color: var(--accent);">市場</span>
+          
+          
+        </div>
+      </div>
+      
+    </div>
   </div>
   
 
   <!-- Key Drivers -->
   
   <div class="section">
-    <div class="section-title">主要な駆動要因</div>
+    <div class="section-title"><span class="section-icon">🔍</span>主要な駆動要因</div>
     
     <div class="card" style="border-left: 3px solid var(--red);">
-      <h3>米国市場全面安</h3>
-      <p>S&P500 -1.67%、NASDAQ -2.15%、DOW -1.73%と三指数揃って大幅下落。VIXが31.05まで急騰し、恐怖指数が「警戒」水準に達した。米国市場のリスクオフが東京市場にも波及し、日経の下落圧力となった。</p>
+      <h3>イラン情勢・原油急騰</h3>
+      <p>中東地政学リスクの高まりによりWTI原油が99.64ドル（+5.5%）、ブレントが112.57ドル（+4.2%）と急騰。原油100ドル突破が視野に入り、エネルギー輸入大国の日本にとってはコスト増加→企業収益圧迫→インフレ再燃の三重苦リスク。商社株には追い風だが、製造業・運輸業には逆風。</p>
     </div>
     
     <div class="card" style="border-left: 3px solid var(--red);">
-      <h3>原油価格急騰</h3>
-      <p>WTI原油が99.64ドル（+5.5%）、ブレントが112.57ドル（+4.2%）と急騰。100ドルの大台に迫る展開で、企業のコスト増加懸念やインフレ再燃リスクが意識された。特にエネルギー輸入国である日本にとっては逆風要因。</p>
+      <h3>米国市場全面安・VIX急騰</h3>
+      <p>S&P500 -1.67%、NASDAQ -2.15%、DOW -1.73%と三指数揃って大幅下落。VIXが31.05まで急騰し「警戒」水準に到達。地政学リスクと原油高によるインフレ懸念がFRBの利下げ期待を後退させ、テック株中心に売り圧力が強まった。</p>
     </div>
     
     <div class="card" style="border-left: 3px solid var(--red);">
-      <h3>安全資産への逃避（金急騰）</h3>
-      <p>金価格が4,492ドル（+2.7%）と大幅上昇。リスク資産から安全資産への資金シフトが鮮明で、株式市場全体への重荷となっている。米10年債利回りは4.44%と小動きだが、リスクオフの中で債券への資金流入も見られる。</p>
+      <h3>安全資産への逃避</h3>
+      <p>金価格が4,492ドル（+2.7%）と歴史的高値圏で推移。リスク資産から安全資産への資金シフトが鮮明。米10年債利回りは4.44%と小幅上昇だが、地政学プレミアムの影響で従来のリスクオフパターン（債券買い→利回り低下）とは異なる動きを見せている。</p>
     </div>
     
   </div>
@@ -328,17 +632,15 @@
   <!-- Continuity -->
   
   <div class="section">
-    <div class="section-title">過去分析との連続性</div>
-    <div class="card">
-      <p>初回分析のため過去データとの比較はなし。本日をベースラインとして記録する。米国市場の大幅下落とVIX急騰の組み合わせは、週明けの東京市場にも継続的な下落圧力をもたらす可能性がある。日経先物（NKD）が51,385円（-1.5%）で引けており、現物との乖離が大きい点に注意が必要。</p>
-    </div>
+    <div class="section-title"><span class="section-icon">🔗</span>過去分析との連続性</div>
+    <div class="card"><p>初回分析のため過去データとの比較はなし。本日をベースラインとして記録する。イラン情勢と原油高の組み合わせは中期的なリスク要因として記憶に留め、今後の推移を追跡する。日経先物（51,385円）と現物（53,373円）の約2,000円乖離は週明けの重要なギャップダウンシグナル。</p></div>
   </div>
   
 
   <!-- Prediction -->
   
   <div class="section">
-    <div class="section-title">明日の予測</div>
+    <div class="section-title"><span class="section-icon">🔮</span>明日の予測</div>
     <div class="prediction-box">
       <div class="prediction-direction">
         
@@ -353,50 +655,78 @@
           置信度: medium
         </span>
       </div>
-      <p style="margin-top: 14px; color: var(--text2); font-size: 0.9em;">米国株の大幅下落（S&P500 -1.67%）とVIX31超えのリスクオフムード、原油100ドル接近のインフレ懸念、日経先物の大幅安（51,385円、現物比-3.7%）を踏まえると、週明けの日経は下落スタートの可能性が高い。ただし、ドル円が安定していることと、RSIがまだ中立圏であることから、パニック的な大幅下落にはならないと見る。</p>
+      <p style="margin-top: 14px; color: var(--text2); font-size: 0.9em;">米国株大幅下落（S&P500 -1.67%）とVIX31超えのリスクオフ、イラン情勢による原油100ドル接近、日経先物51,385円（現物比-3.7%）を踏まえると、週明けは下落スタートの可能性が高い。ただしRSIが中立圏であること、ドル円が安定していることから、パニック的な暴落には至らないと見る。</p>
       
-      <p style="margin-top: 8px; color: var(--text2); font-size: 0.85em;">
-        リスク: 原油がWTI 100ドルを突破した場合のインフレ懸念加速 / 週末に地政学的な新たな材料が出る可能性 / VIXが30超を維持する場合のファンド系売り圧力
-      </p>
+      <p style="margin-top: 8px; color: var(--text2); font-size: 0.85em;">リスク: イラン情勢の追加エスカレーション / 原油WTI 100ドル突破定着 / 週末に新たな地政学材料が出る可能性</p>
       
     </div>
-
-    <!-- Prediction accuracy -->
     
-
-    <!-- Previous prediction verification -->
     
   </div>
   
 
-  <!-- Risk Events -->
+  <!-- Economic Calendar -->
   
   <div class="section">
-    <div class="section-title">リスクイベントカレンダー</div>
+    <div class="section-title"><span class="section-icon">📅</span>経済イベントカレンダー（今後2週間）</div>
+    <div class="card" style="padding: 12px 20px;">
+      
+      <div class="calendar-event">
+        <span class="calendar-date">03-28</span>
+        <span class="calendar-name">米国PCEデフレーター（2月分）</span>
+        <span class="calendar-importance imp-high">high</span>
+      </div>
+      
+      <div class="calendar-event">
+        <span class="calendar-date">03-31</span>
+        <span class="calendar-name">日銀短観（3月調査）</span>
+        <span class="calendar-importance imp-high">high</span>
+      </div>
+      
+      <div class="calendar-event">
+        <span class="calendar-date">03-31</span>
+        <span class="calendar-name">中国PMI（3月）</span>
+        <span class="calendar-importance imp-medium">medium</span>
+      </div>
+      
+      <div class="calendar-event">
+        <span class="calendar-date">04-01</span>
+        <span class="calendar-name">米国ISM製造業（3月）</span>
+        <span class="calendar-importance imp-medium">medium</span>
+      </div>
+      
+      <div class="calendar-event">
+        <span class="calendar-date">04-03</span>
+        <span class="calendar-name">米国雇用統計（3月）</span>
+        <span class="calendar-importance imp-high">high</span>
+      </div>
+      
+      <div class="calendar-event">
+        <span class="calendar-date">04-10</span>
+        <span class="calendar-name">米国CPI（3月）</span>
+        <span class="calendar-importance imp-high">high</span>
+      </div>
+      
+    </div>
+  </div>
+  
+
+  <!-- Risk Events (from LLM) -->
+  
+  <div class="section">
+    <div class="section-title"><span class="section-icon">⚡</span>リスクイベント</div>
     <div class="card" style="padding: 0; overflow: hidden;">
       <table class="risk-table">
-        <thead>
-          <tr><th>日付</th><th>イベント</th><th>予想される影響</th></tr>
-        </thead>
+        <thead><tr><th>日付</th><th>イベント</th><th>予想される影響</th></tr></thead>
         <tbody>
           
-          <tr>
-            <td>2026-03-30</td>
-            <td>週明け東京市場オープン — 米国株安のギャップダウンリスク</td>
-            <td>日経先物ベースで51,385円まで下落の可能性。寄り付きの動向に注目</td>
-          </tr>
+          <tr><td>2026-03-30</td><td>週明け東京市場 — 米国株安・原油高のギャップダウンリスク</td><td>先物ベース51,385円まで下落の可能性。寄り付き動向に注目</td></tr>
           
-          <tr>
-            <td>今週中</td>
-            <td>原油価格動向（WTI 100ドル大台攻防）</td>
-            <td>突破・定着なら企業収益圧迫とインフレ懸念再燃。日本株にとって中長期的な逆風</td>
-          </tr>
+          <tr><td>2026-03-31</td><td>日銀短観（3月調査）</td><td>企業景況感の最重要指標。原油高の影響がどこまで反映されているか</td></tr>
           
-          <tr>
-            <td>今週中</td>
-            <td>米国経済指標（PCEデフレーター等）</td>
-            <td>インフレ指標が上振れなら利下げ期待後退→株安圧力</td>
-          </tr>
+          <tr><td>今週中</td><td>イラン情勢続報・原油100ドル大台攻防</td><td>突破定着ならインフレ懸念再燃で日本株中長期逆風</td></tr>
+          
+          <tr><td>2026-04-03</td><td>米国雇用統計（3月）</td><td>労働市場の強弱がFRBの政策見通しに直結</td></tr>
           
         </tbody>
       </table>
@@ -407,30 +737,67 @@
   <!-- Beginner Lesson -->
   
   <div class="section">
-    <div class="section-title">初心者コーナー</div>
+    <div class="section-title"><span class="section-icon">🎓</span>初心者コーナー</div>
     <div class="beginner-box">
-      
-      <h3>VIX（恐怖指数）とは？</h3>
-      <p>VIXは「恐怖指数」とも呼ばれ、投資家がこの先の株式市場にどれくらい不安を感じているかを数値で表したものです。天気予報の「降水確率」のようなもので、数字が高いほど「荒れそうだ」と多くの人が思っていることを意味します。通常は15-20くらいが平穏な状態。今日の31.05は「かなり不安」な水準で、2020年のコロナショック時には80を超えました。VIXが急に上がると株価が下がることが多いのですが、極端に高くなった後は「売られすぎ」の反動で株価が戻ることもあります。投資家の「気持ち」を読む便利な指標です。</p>
-      
+      <h3>RSI（相対力指数）とは？</h3>
+      <p>RSIは株価の「体温計」のような指標です。0から100の範囲で、株が買われすぎか売られすぎかを教えてくれます。例えるなら、マラソンランナーの心拍数のようなもの。70以上は「走りすぎて疲れている」＝買われすぎで下がるかも。30以下は「まだ余力がある」＝売られすぎで上がるかも。ただし、強い上昇トレンド中は70以上が続くこともあるので、これだけで判断するのは危険です。他の指標と組み合わせて使うのがコツです。</p>
     </div>
   </div>
   
 
-  <!-- Data Quality -->
   <div class="quality-indicator">
     データ完全度: 100.0%
-    
-    | エラー: 6件
-    
+     | エラー: 6件
   </div>
-
 </div>
 
 <div class="footer">
   日経225毎日分析レポート — AI自動生成<br>
   ※ 本レポートは投資助言ではありません。投資判断はご自身の責任でお願いいたします。
 </div>
+
+
+<script>
+(function() {
+  const container = document.getElementById('tv-chart');
+  if (!container || typeof LightweightCharts === 'undefined') return;
+
+  const chart = LightweightCharts.createChart(container, {
+    layout: { background: { color: '#1a1d28' }, textColor: '#8b92a8' },
+    grid: { vertLines: { color: '#2e3347' }, horzLines: { color: '#2e3347' } },
+    crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+    rightPriceScale: { borderColor: '#2e3347' },
+    timeScale: { borderColor: '#2e3347', timeVisible: false },
+  });
+
+  const candleSeries = chart.addCandlestickSeries({
+    upColor: '#4dff91', downColor: '#ff4d6a',
+    borderUpColor: '#4dff91', borderDownColor: '#ff4d6a',
+    wickUpColor: '#4dff91', wickDownColor: '#ff4d6a',
+  });
+
+  const data = [{"close": 50526.92, "high": 50707.23, "low": 50347.65, "open": 50691.22, "time": "2025-12-29"}, {"close": 50339.48, "high": 50534.64, "low": 50198.97, "open": 50312.85, "time": "2025-12-30"}, {"close": 51832.8, "high": 52033.24, "low": 50995.67, "open": 51010.28, "time": "2026-01-05"}, {"close": 52518.08, "high": 52523.77, "low": 52024.62, "open": 52157.22, "time": "2026-01-06"}, {"close": 51961.98, "high": 52404.11, "low": 51830.4, "open": 52144.64, "time": "2026-01-07"}, {"close": 51117.26, "high": 51866.19, "low": 51052.83, "open": 51769.83, "time": "2026-01-08"}, {"close": 51939.89, "high": 51986.91, "low": 51189.14, "open": 51367.98, "time": "2026-01-09"}, {"close": 53549.16, "high": 53814.79, "low": 52741.64, "open": 52808.29, "time": "2026-01-13"}, {"close": 54341.23, "high": 54487.32, "low": 53792.68, "open": 53827.24, "time": "2026-01-14"}, {"close": 54110.5, "high": 54153.61, "low": 53709.87, "open": 54039.4, "time": "2026-01-15"}, {"close": 53936.17, "high": 54130.6, "low": 53706.79, "open": 54071.28, "time": "2026-01-16"}, {"close": 53583.57, "high": 53583.57, "low": 53091.45, "open": 53390.05, "time": "2026-01-19"}, {"close": 52991.1, "high": 53408.35, "low": 52852.9, "open": 53348.59, "time": "2026-01-20"}, {"close": 52774.64, "high": 52848.78, "low": 52194.81, "open": 52228.08, "time": "2026-01-21"}, {"close": 53688.89, "high": 53922.53, "low": 53242.38, "open": 53327.39, "time": "2026-01-22"}, {"close": 53846.87, "high": 54050.84, "low": 53603.68, "open": 53898.45, "time": "2026-01-23"}, {"close": 52885.25, "high": 53138.67, "low": 52656.0, "open": 53023.28, "time": "2026-01-26"}, {"close": 53333.54, "high": 53334.03, "low": 52637.66, "open": 52847.54, "time": "2026-01-27"}, {"close": 53358.71, "high": 53507.18, "low": 52788.1, "open": 53023.88, "time": "2026-01-28"}, {"close": 53375.6, "high": 53742.69, "low": 52990.42, "open": 53301.26, "time": "2026-01-29"}, {"close": 53322.85, "high": 53590.24, "low": 52923.12, "open": 53434.73, "time": "2026-01-30"}, {"close": 52655.18, "high": 54247.15, "low": 52655.18, "open": 53575.37, "time": "2026-02-02"}, {"close": 54720.66, "high": 54782.83, "low": 53307.74, "open": 53332.18, "time": "2026-02-03"}, {"close": 54293.36, "high": 54459.41, "low": 53965.51, "open": 54250.41, "time": "2026-02-04"}, {"close": 53818.04, "high": 54459.08, "low": 53653.06, "open": 54289.05, "time": "2026-02-05"}, {"close": 54253.68, "high": 54253.68, "low": 52950.15, "open": 53435.37, "time": "2026-02-06"}, {"close": 56363.94, "high": 57337.07, "low": 55018.57, "open": 55130.63, "time": "2026-02-09"}, {"close": 57650.54, "high": 57960.19, "low": 56812.01, "open": 56812.01, "time": "2026-02-10"}, {"close": 57639.84, "high": 58015.08, "low": 57554.49, "open": 57864.74, "time": "2026-02-12"}, {"close": 56941.97, "high": 57407.25, "low": 56652.48, "open": 57197.33, "time": "2026-02-13"}, {"close": 56806.41, "high": 57219.2, "low": 56748.18, "open": 57212.97, "time": "2026-02-16"}, {"close": 56566.49, "high": 56926.24, "low": 56135.12, "open": 56819.37, "time": "2026-02-17"}, {"close": 57143.84, "high": 57392.89, "low": 56734.27, "open": 56734.27, "time": "2026-02-18"}, {"close": 57467.83, "high": 57709.82, "low": 57362.01, "open": 57472.08, "time": "2026-02-19"}, {"close": 56825.7, "high": 56979.74, "low": 56680.88, "open": 56979.74, "time": "2026-02-20"}, {"close": 57321.09, "high": 57421.67, "low": 56732.93, "open": 56764.14, "time": "2026-02-24"}, {"close": 58583.12, "high": 58875.17, "low": 57656.5, "open": 57695.4, "time": "2026-02-25"}, {"close": 58753.39, "high": 59332.43, "low": 58577.84, "open": 58995.39, "time": "2026-02-26"}, {"close": 58850.27, "high": 58924.17, "low": 58130.57, "open": 58606.03, "time": "2026-02-27"}, {"close": 58057.24, "high": 58365.21, "low": 57285.77, "open": 57976.2, "time": "2026-03-02"}, {"close": 56279.05, "high": 57890.76, "low": 56091.54, "open": 57729.8, "time": "2026-03-03"}, {"close": 54245.54, "high": 55701.27, "low": 53618.2, "open": 55470.88, "time": "2026-03-04"}, {"close": 55278.06, "high": 56619.98, "low": 54910.33, "open": 55204.16, "time": "2026-03-05"}, {"close": 55620.84, "high": 55686.56, "low": 54513.43, "open": 54674.6, "time": "2026-03-06"}, {"close": 52728.72, "high": 54608.63, "low": 51407.66, "open": 54608.63, "time": "2026-03-09"}, {"close": 54248.39, "high": 54694.89, "low": 53487.19, "open": 53524.09, "time": "2026-03-10"}, {"close": 55025.37, "high": 55745.38, "low": 54882.58, "open": 54917.93, "time": "2026-03-11"}, {"close": 54452.96, "high": 54733.08, "low": 53796.01, "open": 54387.9, "time": "2026-03-12"}, {"close": 53819.61, "high": 54065.31, "low": 53286.69, "open": 53587.3, "time": "2026-03-13"}, {"close": 53751.15, "high": 53983.51, "low": 53113.95, "open": 53627.86, "time": "2026-03-16"}, {"close": 53700.39, "high": 54388.43, "low": 53482.59, "open": 54286.26, "time": "2026-03-17"}, {"close": 55239.4, "high": 55239.4, "low": 54148.84, "open": 54148.84, "time": "2026-03-18"}, {"close": 53372.53, "high": 54333.02, "low": 53190.18, "open": 54287.8, "time": "2026-03-19"}, {"close": 51515.49, "high": 52479.81, "low": 50688.76, "open": 52468.72, "time": "2026-03-23"}, {"close": 52252.28, "high": 52701.99, "low": 51645.15, "open": 52380.6, "time": "2026-03-24"}, {"close": 53749.62, "high": 54022.88, "low": 53015.8, "open": 53015.8, "time": "2026-03-25"}, {"close": 53603.65, "high": 54175.8, "low": 53176.77, "open": 53855.13, "time": "2026-03-26"}, {"close": 53373.07, "high": 53714.9, "low": 52516.92, "open": 53239.59, "time": "2026-03-27"}];
+  candleSeries.setData(data);
+
+  
+  const volumeSeries = chart.addHistogramSeries({
+    priceFormat: { type: 'volume' },
+    priceScaleId: 'volume',
+  });
+  chart.priceScale('volume').applyOptions({
+    scaleMargins: { top: 0.8, bottom: 0 },
+  });
+  volumeSeries.setData([{"color": "rgba(255, 108, 140, 0.5)", "time": "2025-12-29", "value": 98000000}, {"color": "rgba(108, 255, 168, 0.5)", "time": "2025-12-30", "value": 93700000}, {"color": "rgba(108, 255, 168, 0.5)", "time": "2026-01-05", "value": 139400000}, {"color": "rgba(108, 255, 168, 0.5)", "time": "2026-01-06", "value": 151900000}, {"color": "rgba(255, 108, 140, 0.5)", "time": "2026-01-07", "value": 138600000}, {"color": "rgba(255, 108, 140, 0.5)", "time": "2026-01-08", "value": 135400000}, {"color": "rgba(108, 255, 168, 0.5)", "time": "2026-01-09", "value": 133100000}, {"color": "rgba(108, 255, 168, 0.5)", "time": "2026-01-13", "value": 168500000}, {"color": "rgba(108, 255, 168, 0.5)", "time": "2026-01-14", "value": 144500000}, {"color": "rgba(108, 255, 168, 0.5)", "time": "2026-01-15", "value": 150900000}, {"color": "rgba(255, 108, 140, 0.5)", "time": "2026-01-16", "value": 144300000}, {"color": "rgba(108, 255, 168, 0.5)", "time": "2026-01-19", "value": 122900000}, {"color": "rgba(255, 108, 140, 0.5)", "time": "2026-01-20", "value": 126800000}, {"color": "rgba(108, 255, 168, 0.5)", "time": "2026-01-21", "value": 139000000}, {"color": "rgba(108, 255, 168, 0.5)", "time": "2026-01-22", "value": 150900000}, {"color": "rgba(255, 108, 140, 0.5)", "time": "2026-01-23", "value": 129500000}, {"color": "rgba(255, 108, 140, 0.5)", "time": "2026-01-26", "value": 138300000}, {"color": "rgba(108, 255, 168, 0.5)", "time": "2026-01-27", "value": 136700000}, {"color": "rgba(108, 255, 168, 0.5)", "time": "2026-01-28", "value": 149800000}, {"color": "rgba(108, 255, 168, 0.5)", "time": "2026-01-29", "value": 154500000}, {"color": "rgba(255, 108, 140, 0.5)", "time": "2026-01-30", "value": 156800000}, {"color": "rgba(255, 108, 140, 0.5)", "time": "2026-02-02", "value": 153800000}, {"color": "rgba(108, 255, 168, 0.5)", "time": "2026-02-03", "value": 156900000}, {"color": "rgba(108, 255, 168, 0.5)", "time": "2026-02-04", "value": 186300000}, {"color": "rgba(255, 108, 140, 0.5)", "time": "2026-02-05", "value": 213200000}, {"color": "rgba(108, 255, 168, 0.5)", "time": "2026-02-06", "value": 188900000}, {"color": "rgba(108, 255, 168, 0.5)", "time": "2026-02-09", "value": 205000000}, {"color": "rgba(108, 255, 168, 0.5)", "time": "2026-02-10", "value": 191500000}, {"color": "rgba(255, 108, 140, 0.5)", "time": "2026-02-12", "value": 190000000}, {"color": "rgba(255, 108, 140, 0.5)", "time": "2026-02-13", "value": 210000000}, {"color": "rgba(255, 108, 140, 0.5)", "time": "2026-02-16", "value": 137400000}, {"color": "rgba(255, 108, 140, 0.5)", "time": "2026-02-17", "value": 132600000}, {"color": "rgba(108, 255, 168, 0.5)", "time": "2026-02-18", "value": 130100000}, {"color": "rgba(255, 108, 140, 0.5)", "time": "2026-02-19", "value": 135500000}, {"color": "rgba(255, 108, 140, 0.5)", "time": "2026-02-20", "value": 152400000}, {"color": "rgba(108, 255, 168, 0.5)", "time": "2026-02-24", "value": 157800000}, {"color": "rgba(108, 255, 168, 0.5)", "time": "2026-02-25", "value": 167100000}, {"color": "rgba(255, 108, 140, 0.5)", "time": "2026-02-26", "value": 155300000}, {"color": "rgba(108, 255, 168, 0.5)", "time": "2026-02-27", "value": 192400000}, {"color": "rgba(108, 255, 168, 0.5)", "time": "2026-03-02", "value": 162400000}, {"color": "rgba(255, 108, 140, 0.5)", "time": "2026-03-03", "value": 179000000}, {"color": "rgba(255, 108, 140, 0.5)", "time": "2026-03-04", "value": 214000000}, {"color": "rgba(108, 255, 168, 0.5)", "time": "2026-03-05", "value": 184900000}, {"color": "rgba(108, 255, 168, 0.5)", "time": "2026-03-06", "value": 142800000}, {"color": "rgba(255, 108, 140, 0.5)", "time": "2026-03-09", "value": 219400000}, {"color": "rgba(108, 255, 168, 0.5)", "time": "2026-03-10", "value": 162500000}, {"color": "rgba(108, 255, 168, 0.5)", "time": "2026-03-11", "value": 146900000}, {"color": "rgba(108, 255, 168, 0.5)", "time": "2026-03-12", "value": 154100000}, {"color": "rgba(108, 255, 168, 0.5)", "time": "2026-03-13", "value": 169000000}, {"color": "rgba(108, 255, 168, 0.5)", "time": "2026-03-16", "value": 128800000}, {"color": "rgba(255, 108, 140, 0.5)", "time": "2026-03-17", "value": 117800000}, {"color": "rgba(108, 255, 168, 0.5)", "time": "2026-03-18", "value": 136700000}, {"color": "rgba(255, 108, 140, 0.5)", "time": "2026-03-19", "value": 200600000}, {"color": "rgba(255, 108, 140, 0.5)", "time": "2026-03-23", "value": 177100000}, {"color": "rgba(255, 108, 140, 0.5)", "time": "2026-03-24", "value": 131800000}, {"color": "rgba(108, 255, 168, 0.5)", "time": "2026-03-25", "value": 133700000}, {"color": "rgba(255, 108, 140, 0.5)", "time": "2026-03-26", "value": 124500000}, {"color": "rgba(108, 255, 168, 0.5)", "time": "2026-03-27", "value": 170500000}]);
+  
+
+  chart.timeScale().fitContent();
+
+  window.addEventListener('resize', () => {
+    chart.applyOptions({ width: container.clientWidth });
+  });
+})();
+</script>
+
 
 </body>
 </html>

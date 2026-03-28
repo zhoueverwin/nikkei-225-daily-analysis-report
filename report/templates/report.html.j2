@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>日経225分析レポート — {{ date }}</title>
+<script src="https://unpkg.com/lightweight-charts@4.1.0/dist/lightweight-charts.standalone.production.js"></script>
 <style>
   :root {
     --bg: #0f1117;
@@ -42,7 +43,6 @@
   .header .date { color: var(--text2); margin-top: 8px; font-size: 0.95em; }
   .container { max-width: 960px; margin: 0 auto; padding: 30px 20px; }
 
-  /* Dashboard cards */
   .dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 30px; }
   .metric-card {
     background: var(--surface);
@@ -58,7 +58,6 @@
   .negative { color: var(--red); }
   .neutral-val { color: var(--text2); }
 
-  /* Sections */
   .section { margin-bottom: 30px; }
   .section-title {
     font-size: 1.2em;
@@ -67,7 +66,11 @@
     margin-bottom: 14px;
     padding-bottom: 8px;
     border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
+  .section-icon { font-size: 1.1em; }
   .card {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -80,13 +83,11 @@
   .card li { margin-bottom: 4px; }
   .card h3 { color: var(--orange); font-size: 1em; margin-bottom: 10px; }
 
-  /* Signals */
   .signal { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.8em; font-weight: 600; margin: 2px; }
   .signal-bullish { background: rgba(77,255,145,0.15); color: var(--green); }
   .signal-bearish { background: rgba(255,77,106,0.15); color: var(--red); }
   .signal-info { background: rgba(108,140,255,0.15); color: var(--accent); }
 
-  /* Prediction box */
   .prediction-box {
     background: var(--surface);
     border: 1px solid var(--accent);
@@ -106,12 +107,10 @@
   .conf-medium { background: rgba(255,159,67,0.2); color: var(--orange); }
   .conf-low { background: rgba(255,77,106,0.2); color: var(--red); }
 
-  /* Risk events */
   .risk-table { width: 100%; border-collapse: collapse; font-size: 0.9em; }
   .risk-table th { background: var(--surface2); color: var(--accent); padding: 8px 12px; text-align: left; font-weight: 600; }
   .risk-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); }
 
-  /* Contradiction warning */
   .contradiction {
     background: rgba(255,77,106,0.08);
     border: 1px solid rgba(255,77,106,0.3);
@@ -121,17 +120,9 @@
   }
   .contradiction h3 { color: var(--red); }
 
-  /* Accuracy stats */
-  .accuracy-bar {
-    background: var(--surface2);
-    border-radius: 6px;
-    height: 8px;
-    overflow: hidden;
-    margin: 8px 0;
-  }
+  .accuracy-bar { background: var(--surface2); border-radius: 6px; height: 8px; overflow: hidden; margin: 8px 0; }
   .accuracy-fill { height: 100%; border-radius: 6px; background: linear-gradient(90deg, var(--accent), var(--accent3)); }
 
-  /* Beginner */
   .beginner-box {
     background: linear-gradient(135deg, rgba(108,140,255,0.08), rgba(108,255,168,0.08));
     border: 1px solid rgba(108,140,255,0.2);
@@ -140,16 +131,72 @@
   }
   .beginner-box h3 { color: var(--accent); margin-bottom: 10px; }
 
-  /* Data quality */
   .quality-indicator { font-size: 0.8em; color: var(--text2); text-align: right; margin-top: 20px; }
 
-  /* Footer */
+  /* Chart container */
+  #chart-container {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+  #tv-chart { width: 100%; height: 350px; }
+
+  /* Sector bars */
+  .sector-bar-container { margin: 6px 0; }
+  .sector-bar-label { display: flex; justify-content: space-between; font-size: 0.85em; margin-bottom: 2px; }
+  .sector-bar-track { background: var(--surface2); border-radius: 4px; height: 22px; position: relative; overflow: hidden; }
+  .sector-bar-fill { height: 100%; border-radius: 4px; display: flex; align-items: center; padding: 0 8px; font-size: 0.75em; font-weight: 600; min-width: 2px; transition: width 0.5s; }
+
+  /* News list */
+  .news-item {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.9em;
+  }
+  .news-item:last-child { border-bottom: none; }
+  .news-item .news-title { color: var(--text); }
+  .news-item .news-meta { color: var(--text2); font-size: 0.8em; margin-top: 2px; }
+  .news-sentiment { display: inline-block; padding: 1px 8px; border-radius: 8px; font-size: 0.75em; font-weight: 600; }
+
+  /* Sentiment meter */
+  .sentiment-meter { display: flex; align-items: center; gap: 12px; padding: 12px 0; }
+  .meter-bar { flex: 1; height: 12px; background: var(--surface2); border-radius: 6px; position: relative; overflow: hidden; }
+  .meter-fill-neg { position: absolute; right: 50%; height: 100%; background: linear-gradient(270deg, var(--surface2), var(--red)); border-radius: 6px 0 0 6px; }
+  .meter-fill-pos { position: absolute; left: 50%; height: 100%; background: linear-gradient(90deg, var(--surface2), var(--green)); border-radius: 0 6px 6px 0; }
+  .meter-center { position: absolute; left: 50%; top: -2px; width: 2px; height: 16px; background: var(--text2); }
+  .meter-label { font-size: 0.85em; font-weight: 600; min-width: 60px; }
+
+  /* Calendar */
+  .calendar-event {
+    display: flex;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.9em;
+  }
+  .calendar-event:last-child { border-bottom: none; }
+  .calendar-date { min-width: 90px; color: var(--accent); font-weight: 600; }
+  .calendar-name { flex: 1; }
+  .calendar-importance {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 8px;
+    font-size: 0.75em;
+    font-weight: 600;
+  }
+  .imp-critical { background: rgba(255,77,106,0.2); color: var(--red); }
+  .imp-high { background: rgba(255,159,67,0.2); color: var(--orange); }
+  .imp-medium { background: rgba(108,140,255,0.2); color: var(--accent); }
+
   .footer { text-align: center; padding: 30px; color: var(--text2); font-size: 0.8em; border-top: 1px solid var(--border); margin-top: 30px; }
 
   @media (max-width: 640px) {
     .dashboard { grid-template-columns: repeat(2, 1fr); }
     .header h1 { font-size: 1.4em; }
     .container { padding: 20px 12px; }
+    #tv-chart { height: 250px; }
   }
 </style>
 </head>
@@ -162,7 +209,6 @@
 
 <div class="container">
 
-  <!-- Headline -->
   {% if analysis.headline_ja %}
   <div class="card" style="border-left: 3px solid var(--accent); margin-bottom: 24px;">
     <p style="font-size: 1.15em; font-weight: 600;">{{ analysis.headline_ja }}</p>
@@ -180,7 +226,6 @@
       </div>
     </div>
     {% endif %}
-
     {% if fx.usdjpy %}
     <div class="metric-card">
       <div class="label">USD/JPY</div>
@@ -190,7 +235,6 @@
       </div>
     </div>
     {% endif %}
-
     {% if market_data.sp500 %}
     <div class="metric-card">
       <div class="label">S&amp;P 500</div>
@@ -200,7 +244,6 @@
       </div>
     </div>
     {% endif %}
-
     {% if market_data.vix %}
     <div class="metric-card">
       <div class="label">VIX</div>
@@ -210,7 +253,6 @@
       </div>
     </div>
     {% endif %}
-
     {% if commodities.wti_oil %}
     <div class="metric-card">
       <div class="label">WTI原油</div>
@@ -220,7 +262,6 @@
       </div>
     </div>
     {% endif %}
-
     {% if commodities.gold %}
     <div class="metric-card">
       <div class="label">金</div>
@@ -235,9 +276,19 @@
   <!-- Summary -->
   {% if analysis.summary_ja %}
   <div class="section">
-    <div class="section-title">本日の総括</div>
+    <div class="section-title"><span class="section-icon">📋</span>本日の総括</div>
     <div class="card">
       <p>{{ analysis.summary_ja }}</p>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Interactive Chart -->
+  {% if candlestick_data %}
+  <div class="section">
+    <div class="section-title"><span class="section-icon">📈</span>日経225チャート（3ヶ月）</div>
+    <div id="chart-container">
+      <div id="tv-chart"></div>
     </div>
   </div>
   {% endif %}
@@ -245,8 +296,7 @@
   <!-- Technical Analysis -->
   {% if technical %}
   <div class="section">
-    <div class="section-title">テクニカル分析</div>
-
+    <div class="section-title"><span class="section-icon">🔧</span>テクニカル分析</div>
     <div class="dashboard" style="margin-bottom: 12px;">
       {% if technical.rsi %}
       <div class="metric-card">
@@ -257,7 +307,6 @@
         <div class="change neutral-val">{{ technical.rsi.zone|default('') }}</div>
       </div>
       {% endif %}
-
       {% if technical.macd %}
       <div class="metric-card">
         <div class="label">MACD</div>
@@ -267,19 +316,13 @@
         <div class="change neutral-val">{{ technical.macd.crossover|default('none') }}</div>
       </div>
       {% endif %}
-
       {% if technical.moving_averages %}
       <div class="metric-card">
         <div class="label">MA5 / MA25</div>
-        <div class="value" style="font-size: 1em;">
-          {{ technical.moving_averages.ma5|default('N/A') }} / {{ technical.moving_averages.ma25|default('N/A') }}
-        </div>
-        <div class="change neutral-val">
-          {% if technical.moving_averages.golden_cross %}ゴールデンクロス{% elif technical.moving_averages.death_cross %}デッドクロス{% else %}—{% endif %}
-        </div>
+        <div class="value" style="font-size: 1em;">{{ technical.moving_averages.ma5|default('N/A') }} / {{ technical.moving_averages.ma25|default('N/A') }}</div>
+        <div class="change neutral-val">{% if technical.moving_averages.golden_cross %}ゴールデンクロス{% elif technical.moving_averages.death_cross %}デッドクロス{% else %}—{% endif %}</div>
       </div>
       {% endif %}
-
       {% if technical.bollinger_bands %}
       <div class="metric-card">
         <div class="label">ボリンジャー位置</div>
@@ -288,7 +331,6 @@
       </div>
       {% endif %}
     </div>
-
     {% if technical.signals %}
     <div class="card">
       <h3>シグナル</h3>
@@ -297,19 +339,88 @@
       {% endfor %}
     </div>
     {% endif %}
-
     {% if analysis.technical_summary_ja %}
+    <div class="card"><p>{{ analysis.technical_summary_ja }}</p></div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <!-- Sector Rotation -->
+  {% if sector_data and sector_data.available %}
+  <div class="section">
+    <div class="section-title"><span class="section-icon">🏭</span>セクターローテーション</div>
     <div class="card">
-      <p>{{ analysis.technical_summary_ja }}</p>
+      {% for key, sector in sector_data.sectors|items|sort(attribute='1.change_pct', reverse=true) if sector.change_pct is defined %}
+      <div class="sector-bar-container">
+        <div class="sector-bar-label">
+          <span>{{ sector.name_ja }}</span>
+          <span class="{% if sector.change_pct >= 0 %}positive{% else %}negative{% endif %}">{{ "{:+.2f}".format(sector.change_pct) }}%</span>
+        </div>
+        <div class="sector-bar-track">
+          {% set bar_width = [([sector.change_pct|abs * 15, 2]|max), 100]|min %}
+          <div class="sector-bar-fill" style="width: {{ bar_width }}%; background: {% if sector.change_pct >= 0 %}rgba(77,255,145,0.6){% else %}rgba(255,77,106,0.6){% endif %}; {% if sector.change_pct < 0 %}margin-left: auto;{% endif %}"></div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% if sector_data.rotation_signal_ja %}
+    <div class="card"><p>{{ sector_data.rotation_signal_ja }}</p></div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <!-- News & Sentiment -->
+  {% if news_data and news_data.top_stories %}
+  <div class="section">
+    <div class="section-title"><span class="section-icon">📰</span>ニュース & 市場センチメント</div>
+
+    {% if sentiment_data %}
+    <div class="card">
+      <h3>センチメントスコア</h3>
+      <div class="sentiment-meter">
+        <span class="meter-label negative">ネガティブ</span>
+        <div class="meter-bar">
+          <div class="meter-center"></div>
+          {% if sentiment_data.overall_score < 0 %}
+          <div class="meter-fill-neg" style="width: {{ [sentiment_data.overall_score|abs * 50, 50]|min }}%;"></div>
+          {% else %}
+          <div class="meter-fill-pos" style="width: {{ [sentiment_data.overall_score * 50, 50]|min }}%;"></div>
+          {% endif %}
+        </div>
+        <span class="meter-label positive" style="text-align: right;">ポジティブ</span>
+      </div>
+      <p style="text-align: center; font-size: 0.85em; color: var(--text2);">
+        スコア: {{ "{:+.3f}".format(sentiment_data.overall_score) }} ({{ sentiment_data.article_count }}記事分析)
+      </p>
+      {% if sentiment_data.summary_ja %}
+      <p style="margin-top: 8px; font-size: 0.9em;">{{ sentiment_data.summary_ja }}</p>
+      {% endif %}
     </div>
     {% endif %}
+
+    <div class="card">
+      <h3>主要ニュース</h3>
+      {% for story in news_data.top_stories[:8] %}
+      <div class="news-item">
+        <div class="news-title">{{ story.title }}</div>
+        <div class="news-meta">
+          {{ story.feed_name|default('') }}
+          {% if story.matched_keywords %}
+          {% for kw in story.matched_keywords[:3] %}
+          <span class="news-sentiment" style="background: rgba(108,140,255,0.15); color: var(--accent);">{{ kw }}</span>
+          {% endfor %}
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
   </div>
   {% endif %}
 
   <!-- Key Drivers -->
   {% if analysis.drivers %}
   <div class="section">
-    <div class="section-title">主要な駆動要因</div>
+    <div class="section-title"><span class="section-icon">🔍</span>主要な駆動要因</div>
     {% for driver in analysis.drivers %}
     <div class="card" style="border-left: 3px solid {% if driver.impact == 'positive' %}var(--green){% elif driver.impact == 'negative' %}var(--red){% else %}var(--text2){% endif %};">
       <h3>{{ driver.factor_ja }}</h3>
@@ -322,7 +433,7 @@
   <!-- Contradictions -->
   {% if contradiction_flags %}
   <div class="section">
-    <div class="section-title">矛盾・注意点</div>
+    <div class="section-title"><span class="section-icon">⚠️</span>矛盾・注意点</div>
     {% for flag in contradiction_flags %}
     <div class="contradiction">
       <h3>{{ flag.type }}</h3>
@@ -335,17 +446,15 @@
   <!-- Continuity -->
   {% if analysis.continuity_ja %}
   <div class="section">
-    <div class="section-title">過去分析との連続性</div>
-    <div class="card">
-      <p>{{ analysis.continuity_ja }}</p>
-    </div>
+    <div class="section-title"><span class="section-icon">🔗</span>過去分析との連続性</div>
+    <div class="card"><p>{{ analysis.continuity_ja }}</p></div>
   </div>
   {% endif %}
 
   <!-- Prediction -->
   {% if analysis.prediction %}
   <div class="section">
-    <div class="section-title">明日の予測</div>
+    <div class="section-title"><span class="section-icon">🔮</span>明日の予測</div>
     <div class="prediction-box">
       <div class="prediction-direction">
         {% set dir_map = {"strong_up": "強い上昇", "slight_up": "小幅上昇", "flat": "横ばい", "slight_down": "小幅下落", "strong_down": "強い下落"} %}
@@ -362,64 +471,53 @@
       </div>
       <p style="margin-top: 14px; color: var(--text2); font-size: 0.9em;">{{ analysis.prediction.reasoning_ja|default('') }}</p>
       {% if analysis.prediction.risk_factors_ja %}
-      <p style="margin-top: 8px; color: var(--text2); font-size: 0.85em;">
-        リスク: {{ analysis.prediction.risk_factors_ja|join(' / ') }}
-      </p>
+      <p style="margin-top: 8px; color: var(--text2); font-size: 0.85em;">リスク: {{ analysis.prediction.risk_factors_ja|join(' / ') }}</p>
       {% endif %}
     </div>
-
-    <!-- Prediction accuracy -->
     {% if prediction_accuracy and prediction_accuracy.total > 0 %}
     <div class="card" style="margin-top: 12px;">
       <h3>過去の予測精度</h3>
       <div class="accuracy-bar">
         <div class="accuracy-fill" style="width: {{ prediction_accuracy.accuracy_pct|default(0) }}%;"></div>
       </div>
-      <p style="font-size: 0.85em; color: var(--text2);">
-        方向一致率: {{ prediction_accuracy.accuracy_pct|default('N/A') }}%
-        ({{ prediction_accuracy.correct }}/{{ prediction_accuracy.total }}回)
-      </p>
+      <p style="font-size: 0.85em; color: var(--text2);">方向一致率: {{ prediction_accuracy.accuracy_pct|default('N/A') }}% ({{ prediction_accuracy.correct }}/{{ prediction_accuracy.total }}回)</p>
     </div>
     {% endif %}
-
-    <!-- Previous prediction verification -->
     {% if prediction_verification %}
     <div class="card" style="margin-top: 12px;">
       <h3>前日予測の検証</h3>
-      <p>
-        予測: {{ prediction_verification.predicted|default('N/A') }} →
-        実際: {{ prediction_verification.actual|default('N/A') }}
-        ({{ "{:+.2f}".format(prediction_verification.actual_change_pct|default(0)) }}%)
-        —
-        {% if prediction_verification.result == 'correct' %}
-        <span class="positive">的中</span>
-        {% elif prediction_verification.result == 'partial' %}
-        <span style="color: var(--orange);">部分的中</span>
-        {% else %}
-        <span class="negative">外れ</span>
-        {% endif %}
-      </p>
+      <p>予測: {{ prediction_verification.predicted|default('N/A') }} → 実際: {{ prediction_verification.actual|default('N/A') }} ({{ "{:+.2f}".format(prediction_verification.actual_change_pct|default(0)) }}%) — {% if prediction_verification.result == 'correct' %}<span class="positive">的中</span>{% elif prediction_verification.result == 'partial' %}<span style="color: var(--orange);">部分的中</span>{% else %}<span class="negative">外れ</span>{% endif %}</p>
     </div>
     {% endif %}
   </div>
   {% endif %}
 
-  <!-- Risk Events -->
+  <!-- Economic Calendar -->
+  {% if calendar_data and calendar_data.events %}
+  <div class="section">
+    <div class="section-title"><span class="section-icon">📅</span>経済イベントカレンダー（今後2週間）</div>
+    <div class="card" style="padding: 12px 20px;">
+      {% for event in calendar_data.events %}
+      <div class="calendar-event">
+        <span class="calendar-date">{{ event.date[5:] }}</span>
+        <span class="calendar-name">{{ event.name_ja }}</span>
+        <span class="calendar-importance imp-{{ event.importance }}">{{ event.importance }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Risk Events (from LLM) -->
   {% if analysis.risk_events %}
   <div class="section">
-    <div class="section-title">リスクイベントカレンダー</div>
+    <div class="section-title"><span class="section-icon">⚡</span>リスクイベント</div>
     <div class="card" style="padding: 0; overflow: hidden;">
       <table class="risk-table">
-        <thead>
-          <tr><th>日付</th><th>イベント</th><th>予想される影響</th></tr>
-        </thead>
+        <thead><tr><th>日付</th><th>イベント</th><th>予想される影響</th></tr></thead>
         <tbody>
           {% for event in analysis.risk_events %}
-          <tr>
-            <td>{{ event.date }}</td>
-            <td>{{ event.event_ja }}</td>
-            <td>{{ event.impact_ja }}</td>
-          </tr>
+          <tr><td>{{ event.date }}</td><td>{{ event.event_ja }}</td><td>{{ event.impact_ja }}</td></tr>
           {% endfor %}
         </tbody>
       </table>
@@ -428,34 +526,69 @@
   {% endif %}
 
   <!-- Beginner Lesson -->
-  {% if analysis.beginner_lesson or (analysis.beginner_topic_hint_ja is defined and analysis.beginner_topic_hint_ja) %}
+  {% if analysis.beginner_lesson %}
   <div class="section">
-    <div class="section-title">初心者コーナー</div>
+    <div class="section-title"><span class="section-icon">🎓</span>初心者コーナー</div>
     <div class="beginner-box">
-      {% if analysis.beginner_lesson %}
       <h3>{{ analysis.beginner_lesson.topic_ja|default('今日のトピック') }}</h3>
       <p>{{ analysis.beginner_lesson.explanation_ja|default('') }}</p>
-      {% else %}
-      <h3>{{ analysis.beginner_topic_hint_ja }}</h3>
-      {% endif %}
     </div>
   </div>
   {% endif %}
 
-  <!-- Data Quality -->
   <div class="quality-indicator">
     データ完全度: {{ data_quality.completeness_pct|default('N/A') }}%
-    {% if data_quality.errors %}
-    | エラー: {{ data_quality.errors|length }}件
-    {% endif %}
+    {% if data_quality.errors %} | エラー: {{ data_quality.errors|length }}件{% endif %}
   </div>
-
 </div>
 
 <div class="footer">
   日経225毎日分析レポート — AI自動生成<br>
   ※ 本レポートは投資助言ではありません。投資判断はご自身の責任でお願いいたします。
 </div>
+
+{% if candlestick_data %}
+<script>
+(function() {
+  const container = document.getElementById('tv-chart');
+  if (!container || typeof LightweightCharts === 'undefined') return;
+
+  const chart = LightweightCharts.createChart(container, {
+    layout: { background: { color: '#1a1d28' }, textColor: '#8b92a8' },
+    grid: { vertLines: { color: '#2e3347' }, horzLines: { color: '#2e3347' } },
+    crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+    rightPriceScale: { borderColor: '#2e3347' },
+    timeScale: { borderColor: '#2e3347', timeVisible: false },
+  });
+
+  const candleSeries = chart.addCandlestickSeries({
+    upColor: '#4dff91', downColor: '#ff4d6a',
+    borderUpColor: '#4dff91', borderDownColor: '#ff4d6a',
+    wickUpColor: '#4dff91', wickDownColor: '#ff4d6a',
+  });
+
+  const data = {{ candlestick_data | tojson }};
+  candleSeries.setData(data);
+
+  {% if volume_data %}
+  const volumeSeries = chart.addHistogramSeries({
+    priceFormat: { type: 'volume' },
+    priceScaleId: 'volume',
+  });
+  chart.priceScale('volume').applyOptions({
+    scaleMargins: { top: 0.8, bottom: 0 },
+  });
+  volumeSeries.setData({{ volume_data | tojson }});
+  {% endif %}
+
+  chart.timeScale().fitContent();
+
+  window.addEventListener('resize', () => {
+    chart.applyOptions({ width: container.clientWidth });
+  });
+})();
+</script>
+{% endif %}
 
 </body>
 </html>
