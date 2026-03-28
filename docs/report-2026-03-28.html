@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>日経225分析レポート — 2026-03-28</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d28;
+    --surface2: #242836;
+    --border: #2e3347;
+    --accent: #6c8cff;
+    --accent2: #ff6c8c;
+    --accent3: #6cffa8;
+    --text: #e0e4f0;
+    --text2: #8b92a8;
+    --gold: #ffd700;
+    --orange: #ff9f43;
+    --red: #ff4d6a;
+    --green: #4dff91;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', -apple-system, 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+  }
+  .header {
+    background: linear-gradient(135deg, #1a1d28 0%, #0f1117 50%, #1a1028 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 40px 30px;
+    text-align: center;
+  }
+  .header h1 {
+    font-size: 1.8em;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .header .date { color: var(--text2); margin-top: 8px; font-size: 0.95em; }
+  .container { max-width: 960px; margin: 0 auto; padding: 30px 20px; }
+
+  /* Dashboard cards */
+  .dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 30px; }
+  .metric-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    text-align: center;
+  }
+  .metric-card .label { font-size: 0.8em; color: var(--text2); margin-bottom: 4px; }
+  .metric-card .value { font-size: 1.4em; font-weight: 700; }
+  .metric-card .change { font-size: 0.85em; margin-top: 4px; }
+  .positive { color: var(--green); }
+  .negative { color: var(--red); }
+  .neutral-val { color: var(--text2); }
+
+  /* Sections */
+  .section { margin-bottom: 30px; }
+  .section-title {
+    font-size: 1.2em;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 14px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 12px;
+  }
+  .card p, .card li { line-height: 1.8; font-size: 0.95em; }
+  .card ul { padding-left: 20px; }
+  .card li { margin-bottom: 4px; }
+  .card h3 { color: var(--orange); font-size: 1em; margin-bottom: 10px; }
+
+  /* Signals */
+  .signal { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.8em; font-weight: 600; margin: 2px; }
+  .signal-bullish { background: rgba(77,255,145,0.15); color: var(--green); }
+  .signal-bearish { background: rgba(255,77,106,0.15); color: var(--red); }
+  .signal-info { background: rgba(108,140,255,0.15); color: var(--accent); }
+
+  /* Prediction box */
+  .prediction-box {
+    background: var(--surface);
+    border: 1px solid var(--accent);
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+  }
+  .prediction-direction { font-size: 1.5em; font-weight: 700; margin: 10px 0; }
+  .confidence-badge {
+    display: inline-block;
+    padding: 2px 12px;
+    border-radius: 12px;
+    font-size: 0.8em;
+    font-weight: 600;
+  }
+  .conf-high { background: rgba(77,255,145,0.2); color: var(--green); }
+  .conf-medium { background: rgba(255,159,67,0.2); color: var(--orange); }
+  .conf-low { background: rgba(255,77,106,0.2); color: var(--red); }
+
+  /* Risk events */
+  .risk-table { width: 100%; border-collapse: collapse; font-size: 0.9em; }
+  .risk-table th { background: var(--surface2); color: var(--accent); padding: 8px 12px; text-align: left; font-weight: 600; }
+  .risk-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); }
+
+  /* Contradiction warning */
+  .contradiction {
+    background: rgba(255,77,106,0.08);
+    border: 1px solid rgba(255,77,106,0.3);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+  .contradiction h3 { color: var(--red); }
+
+  /* Accuracy stats */
+  .accuracy-bar {
+    background: var(--surface2);
+    border-radius: 6px;
+    height: 8px;
+    overflow: hidden;
+    margin: 8px 0;
+  }
+  .accuracy-fill { height: 100%; border-radius: 6px; background: linear-gradient(90deg, var(--accent), var(--accent3)); }
+
+  /* Beginner */
+  .beginner-box {
+    background: linear-gradient(135deg, rgba(108,140,255,0.08), rgba(108,255,168,0.08));
+    border: 1px solid rgba(108,140,255,0.2);
+    border-radius: 10px;
+    padding: 20px;
+  }
+  .beginner-box h3 { color: var(--accent); margin-bottom: 10px; }
+
+  /* Data quality */
+  .quality-indicator { font-size: 0.8em; color: var(--text2); text-align: right; margin-top: 20px; }
+
+  /* Footer */
+  .footer { text-align: center; padding: 30px; color: var(--text2); font-size: 0.8em; border-top: 1px solid var(--border); margin-top: 30px; }
+
+  @media (max-width: 640px) {
+    .dashboard { grid-template-columns: repeat(2, 1fr); }
+    .header h1 { font-size: 1.4em; }
+    .container { padding: 20px 12px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>日経225 毎日分析レポート</h1>
+  <div class="date">2026-03-28 | 生成時刻: 2026-03-28 22:47 JST</div>
+</div>
+
+<div class="container">
+
+  <!-- Headline -->
+  
+  <div class="card" style="border-left: 3px solid var(--accent); margin-bottom: 24px;">
+    <p style="font-size: 1.15em; font-weight: 600;">日経225: 53373.0703125 (-0.43%)</p>
+  </div>
+  
+
+  <!-- Dashboard -->
+  <div class="dashboard">
+    
+    <div class="metric-card">
+      <div class="label">日経225</div>
+      <div class="value">53,373</div>
+      <div class="change negative">
+        -0.43%
+      </div>
+    </div>
+    
+
+    
+    <div class="metric-card">
+      <div class="label">USD/JPY</div>
+      <div class="value">159.70</div>
+      <div class="change positive">
+        +0.20%
+      </div>
+    </div>
+    
+
+    
+    <div class="metric-card">
+      <div class="label">S&amp;P 500</div>
+      <div class="value">6,369</div>
+      <div class="change negative">
+        -1.67%
+      </div>
+    </div>
+    
+
+    
+    <div class="metric-card">
+      <div class="label">VIX</div>
+      <div class="value">31.0</div>
+      <div class="change negative">
+        +13.16%
+      </div>
+    </div>
+    
+
+    
+    <div class="metric-card">
+      <div class="label">WTI原油</div>
+      <div class="value">$99.6</div>
+      <div class="change positive">
+        +5.46%
+      </div>
+    </div>
+    
+
+    
+    <div class="metric-card">
+      <div class="label">金</div>
+      <div class="value">$4,492</div>
+      <div class="change positive">
+        +2.66%
+      </div>
+    </div>
+    
+  </div>
+
+  <!-- Summary -->
+  
+  <div class="section">
+    <div class="section-title">本日の総括</div>
+    <div class="card">
+      <p>ドライランモードのため、LLM分析は省略されています。実行時には詳細な分析が生成されます。</p>
+    </div>
+  </div>
+  
+
+  <!-- Technical Analysis -->
+  
+  <div class="section">
+    <div class="section-title">テクニカル分析</div>
+
+    <div class="dashboard" style="margin-bottom: 12px;">
+      
+      <div class="metric-card">
+        <div class="label">RSI (14)</div>
+        <div class="value neutral-val">
+          42.19
+        </div>
+        <div class="change neutral-val">neutral</div>
+      </div>
+      
+
+      
+      <div class="metric-card">
+        <div class="label">MACD</div>
+        <div class="value negative">
+          -127.4
+        </div>
+        <div class="change neutral-val">none</div>
+      </div>
+      
+
+      
+      <div class="metric-card">
+        <div class="label">MA5 / MA25</div>
+        <div class="value" style="font-size: 1em;">
+          52898.82 / 55124.59
+        </div>
+        <div class="change neutral-val">
+          —
+        </div>
+      </div>
+      
+
+      
+      <div class="metric-card">
+        <div class="label">ボリンジャー位置</div>
+        <div class="value" style="font-size: 1em;">lower_half</div>
+        <div class="change neutral-val">幅: 13.07%</div>
+      </div>
+      
+    </div>
+
+    
+
+    
+    <div class="card">
+      <p>テクニカル分析データは取得済みです。</p>
+    </div>
+    
+  </div>
+  
+
+  <!-- Key Drivers -->
+  
+  <div class="section">
+    <div class="section-title">主要な駆動要因</div>
+    
+    <div class="card" style="border-left: 3px solid var(--red);">
+      <h3>米国市場</h3>
+      <p>S&P500 -1.67% — 米国市場の動向が日本市場に波及</p>
+    </div>
+    
+    <div class="card" style="border-left: 3px solid var(--red);">
+      <h3>VIX</h3>
+      <p>VIX 31.05 — 恐怖指数上昇でリスクオフ圧力</p>
+    </div>
+    
+  </div>
+  
+
+  <!-- Contradictions -->
+  
+
+  <!-- Continuity -->
+  
+  <div class="section">
+    <div class="section-title">過去分析との連続性</div>
+    <div class="card">
+      <p>初回実行のため過去データなし。</p>
+    </div>
+  </div>
+  
+
+  <!-- Prediction -->
+  
+  <div class="section">
+    <div class="section-title">明日の予測</div>
+    <div class="prediction-box">
+      <div class="prediction-direction">
+        
+        
+        <span class="neutral-val">
+          横ばい
+        </span>
+      </div>
+      <div>
+        
+        <span class="confidence-badge conf-low">
+          置信度: low
+        </span>
+      </div>
+      <p style="margin-top: 14px; color: var(--text2); font-size: 0.9em;">ドライランモード</p>
+      
+    </div>
+
+    <!-- Prediction accuracy -->
+    
+
+    <!-- Previous prediction verification -->
+    
+  </div>
+  
+
+  <!-- Risk Events -->
+  
+
+  <!-- Beginner Lesson -->
+  
+  <div class="section">
+    <div class="section-title">初心者コーナー</div>
+    <div class="beginner-box">
+      
+      <h3>テクニカル分析とは？</h3>
+      <p>テクニカル分析とは、過去の価格や出来高のパターンから将来の値動きを予測する手法です。チャートを読む力を身につけることで、より良い投資判断ができるようになります。</p>
+      
+    </div>
+  </div>
+  
+
+  <!-- Data Quality -->
+  <div class="quality-indicator">
+    データ完全度: 100.0%
+    
+    | エラー: 6件
+    
+  </div>
+
+</div>
+
+<div class="footer">
+  日経225毎日分析レポート — AI自動生成<br>
+  ※ 本レポートは投資助言ではありません。投資判断はご自身の責任でお願いいたします。
+</div>
+
+</body>
+</html>

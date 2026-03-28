@@ -1,0 +1,27 @@
+# Nikkei 225 Daily Analysis Agent - Configuration
+llm:
+  model: "claude-sonnet-4-6"
+  max_tokens: 8192
+  temperature: 0.3
+
+data_collection:
+  # JST timezone
+  pre_market_time: "07:00"
+  post_market_time: "15:30"
+  global_close_time: "16:00"
+  timeout_seconds: 30
+  retry_count: 3
+
+memory:
+  store_dir: "memory/store"
+  short_term_days: 7
+  medium_term_days: 30
+
+report:
+  output_dir: "docs"  # GitHub Pages serves from docs/
+  language: "ja"
+  theme: "dark"
+
+schedule:
+  enabled: false
+  cron_expression: "30 15 * * 1-5"  # 15:30 JST weekdays
