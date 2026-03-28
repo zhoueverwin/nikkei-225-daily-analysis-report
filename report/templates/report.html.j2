@@ -157,6 +157,7 @@
   }
   .news-item:last-child { border-bottom: none; }
   .news-item .news-title { color: var(--text); }
+  .news-item .news-title a:hover { color: var(--accent); border-color: var(--accent) !important; }
   .news-item .news-meta { color: var(--text2); font-size: 0.8em; margin-top: 2px; }
   .news-sentiment { display: inline-block; padding: 1px 8px; border-radius: 8px; font-size: 0.75em; font-weight: 600; }
 
@@ -400,11 +401,14 @@
 
     <div class="card">
       <h3>主要ニュース</h3>
-      {% for story in news_data.top_stories[:8] %}
+      {% for story in news_data.top_stories[:10] %}
       <div class="news-item">
-        <div class="news-title">{{ story.title }}</div>
+        <div class="news-title">
+          {% if story.link %}<a href="{{ story.link }}" target="_blank" rel="noopener" style="color: var(--text); text-decoration: none; border-bottom: 1px solid var(--border); transition: color 0.2s, border-color 0.2s;">{{ story.title }}</a>{% else %}{{ story.title }}{% endif %}
+        </div>
         <div class="news-meta">
-          {{ story.feed_name|default('') }}
+          <span style="color: var(--accent);">{{ story.source_name_ja|default(story.feed_name|default('')) }}</span>
+          {% if story.method|default('') %}<span style="color: var(--text2); margin-left: 4px;">[{{ story.method }}]</span>{% endif %}
           {% if story.matched_keywords %}
           {% for kw in story.matched_keywords[:3] %}
           <span class="news-sentiment" style="background: rgba(108,140,255,0.15); color: var(--accent);">{{ kw }}</span>
