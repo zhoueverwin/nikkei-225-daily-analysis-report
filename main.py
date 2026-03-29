@@ -244,9 +244,7 @@ def run_pipeline(
                 prediction_verification=prediction_verification,
                 data_quality=quality_dict,
             )
-            if llm_analysis.get("beginner_topic_hint_ja") and not llm_analysis.get("beginner_lesson"):
-                lesson = engine.generate_beginner_lesson(llm_analysis["beginner_topic_hint_ja"])
-                llm_analysis["beginner_lesson"] = lesson
+            # beginner_lesson is now generated inline by generate_analysis() from beginner_explanation_ja
         except Exception as e:
             logger.warning(f"  LLM unavailable ({e}), using fallback")
             llm_analysis = {

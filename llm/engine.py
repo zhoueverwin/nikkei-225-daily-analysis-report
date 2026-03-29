@@ -85,7 +85,13 @@ class LLMEngine:
             # Extract JSON from response
             text = response.content[0].text
             # Try to parse as JSON directly, or extract from code block
-            return self._parse_json_response(text)
+            result = self._parse_json_response(text)
+
+            # Promote beginner_explanation_ja → beginner_lesson for downstream compatibility
+            if "beginner_explanation_ja" in result and not result.get("beginner_lesson"):
+                result["beginner_lesson"] = result.pop("beginner_explanation_ja")
+
+            return result
 
         except anthropic.APIError as e:
             logger.error(f"Claude API error: {e}")

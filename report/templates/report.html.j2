@@ -538,6 +538,9 @@
     <div class="beginner-box">
       <h3>{{ analysis.beginner_lesson.topic_ja|default('今日のトピック') }}</h3>
       <p>{{ analysis.beginner_lesson.explanation_ja|default('') }}</p>
+      {% if analysis.beginner_lesson.key_takeaway_ja %}
+      <p><strong>💡 ポイント：</strong>{{ analysis.beginner_lesson.key_takeaway_ja }}</p>
+      {% endif %}
     </div>
   </div>
   {% endif %}
